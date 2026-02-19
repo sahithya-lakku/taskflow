@@ -1,4 +1,3 @@
-import 'dotenv/config';
 import http from 'http';
 import cors from 'cors';
 import express from 'express';
@@ -12,13 +11,14 @@ import notificationRoutes from './routes/notification.routes.js';
 import { errorHandler } from './middlewares/error.middleware.js';
 import { sanitizeInput } from './middlewares/security.middleware.js';
 import { configureSocket } from './sockets/index.js';
+import { appEnv } from './config/env.js';
 
 const app = express();
 const server = http.createServer(app);
 
 const io = new SocketServer(server, {
   cors: {
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    origin: appEnv.FRONTEND_URL,
     methods: ['GET', 'POST', 'PATCH', 'DELETE'],
   },
 });
@@ -29,7 +29,7 @@ app.use(helmet());
 app.use(rateLimit({ windowMs: 15 * 60 * 1000, limit: 300 }));
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    origin: appEnv.FRONTEND_URL,
     credentials: true,
   }),
 );
@@ -53,7 +53,7 @@ app.use('/api/notifications', notificationRoutes);
 
 app.use(errorHandler);
 
-const PORT = process.env.PORT || 5000;
+const PORT = appEnv.PORT;
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });

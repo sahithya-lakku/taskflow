@@ -73,3 +73,19 @@ npx prisma migrate dev --name saas_upgrade
 - `task:created`, `task:updated`, `task:deleted`
 - `comment:created`
 - `notification:new`
+
+
+## Fix: `Environment variable not found: DATABASE_URL`
+If you get this error, your `.env` is missing or empty.
+
+Windows (from `backend`):
+```bat
+copy .env.example .env
+notepad .env
+```
+Then set at least:
+```env
+DATABASE_URL=postgresql://...
+JWT_SECRET=your-long-secret
+```
+Restart `npm run dev` after saving `.env`.
