@@ -1,0 +1,90 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  MEMBER
+}
+
+enum ProjectMemberRole {
+  OWNER
+  MEMBER
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+model User {
+  id               String           @id @default(cuid())
+  name             String
+  email            String           @unique
+  password         String
+  role             UserRole         @default(MEMBER)
+  createdAt        DateTime         @default(now())
+  ownedProjects    Project[]        @relation("ProjectOwner")
+  memberships      ProjectMember[]
+  assignedTasks    Task[]           @relation("TaskAssignee")
+  taskActivityLogs TaskActivityLog[] @relation("ActivityPerformer")
+}
+
+model Project {
+  id          String          @id @default(cuid())
+  name        String
+  description String?
+  ownerId     String
+  owner       User            @relation("ProjectOwner", fields: [ownerId], references: [id])
+  createdAt   DateTime        @default(now())
+  members     ProjectMember[]
+  tasks       Task[]
+}
+
+model ProjectMember {
+  id        String            @id @default(cuid())
+  userId    String
+  projectId String
+  role      ProjectMemberRole @default(MEMBER)
+  user      User              @relation(fields: [userId], references: [id])
+  project   Project           @relation(fields: [projectId], references: [id])
+
+  @@unique([userId, projectId])
+}
+
+model Task {
+  id               String            @id @default(cuid())
+  title            String
+  description      String?
+  status           TaskStatus        @default(TODO)
+  priority         TaskPriority      @default(MEDIUM)
+  dueDate          DateTime?
+  projectId        String
+  assignedToId     String?
+  project          Project           @relation(fields: [projectId], references: [id])
+  assignedTo       User?             @relation("TaskAssignee", fields: [assignedToId], references: [id])
+  createdAt        DateTime          @default(now())
+  taskActivityLogs TaskActivityLog[]
+}
+
+model TaskActivityLog {
+  id            String   @id @default(cuid())
+  taskId         String
+  action         String
+  performedById  String
+  timestamp      DateTime @default(now())
+  task           Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  performedBy    User     @relation("ActivityPerformer", fields: [performedById], references: [id])
+}
