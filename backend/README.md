@@ -16,7 +16,7 @@ Neon is a **PostgreSQL** database. In Prisma, the datasource provider must stay:
 provider = "postgresql"
 ```
 
-Do **not** change provider to `neon` (that is not a valid Prisma provider value).
+Do **not** change provider to `neon`.
 
 ## Setup
 ```bash
@@ -37,6 +37,26 @@ npx prisma generate
 npx prisma migrate dev --name init
 npm run dev
 ```
+
+## Existing Neon DB / migration drift fix
+If you see:
+
+- `Drift detected...`
+- `migration(s) are applied to the database but missing from the local migrations directory: 20260219130757_init`
+
+use this flow (from `backend/`):
+
+```bat
+npx prisma generate
+npx prisma migrate status
+npx prisma migrate resolve --applied 20260219130757_init
+npx prisma migrate dev
+```
+
+Notes:
+- This repository now includes `prisma/migrations/20260219130757_init` so Prisma can match the migration history.
+- Use `migrate dev` for local development. Use `migrate deploy` in production.
+- Do **not** run `cd backend` if your prompt already is `...\backend>`.
 
 ## Environment
 Copy `.env.example` to `.env` and fill values.
@@ -61,16 +81,6 @@ Required keys:
 ## Real-time
 - Client emits: `project:join` with projectId
 - Server emits: `task:created`, `task:updated`, `task:deleted` to room `project:<id>`
-
-## Common fix for `Environment variable not found: DATABASE_URL`
-If Prisma shows:
-
-`Environment variable not found: DATABASE_URL`
-
-1. Ensure `backend/.env` exists.
-2. Ensure it contains a valid `DATABASE_URL=...` line.
-3. Run commands from the `backend/` directory.
-4. Restart terminal / dev server after editing `.env`.
 
 ## Deployment (Render)
 1. Create Render Web Service from `backend/`.
