@@ -26,3 +26,11 @@ npm install
 npm run dev
 npm run build
 ```
+
+
+## Troubleshooting
+- If Vite says `Failed to resolve import "@fullcalendar/interaction"`, run:
+  ```bash
+  npm install @fullcalendar/interaction
+  ```
+- If you see JSX parse warnings, ensure your latest files are pulled and restart `npm run dev`.

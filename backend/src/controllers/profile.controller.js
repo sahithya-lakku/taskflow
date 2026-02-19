@@ -1,3 +1,5 @@
+import fs from 'fs';
+import cloudinary from '../config/cloudinary.js';
 import { deleteAccount, getProfile, updateAvatar, updateNotificationPreference, updatePassword, upsertProfile } from '../services/profile.service.js';
 
 export const getProfileHandler = async (req, res, next) => {
@@ -16,7 +18,14 @@ export const updateProfileHandler = async (req, res, next) => {
 
 export const updateAvatarHandler = async (req, res, next) => {
   try {
-    const avatarUrl = req.file?.path || req.file?.secure_url || req.file?.filename || '';
+    let avatarUrl = req.file?.path || '';
+
+    if (req.file?.path && process.env.CLOUDINARY_CLOUD_NAME) {
+      const uploaded = await cloudinary.uploader.upload(req.file.path, { folder: 'taskflow-avatars' });
+      avatarUrl = uploaded.secure_url;
+      fs.unlink(req.file.path, () => {});
+    }
+
     const data = await updateAvatar(req.user.id, avatarUrl);
     res.json({ success: true, data });
   } catch (e) { next(e); }

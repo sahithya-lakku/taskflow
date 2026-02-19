@@ -54,3 +54,11 @@ Set these env vars to upload avatars to Cloudinary:
 - `CLOUDINARY_API_SECRET`
 
 If not set, avatar uploads fall back to local `uploads/`.
+
+
+## Dependency note
+- Backend avatar upload uses `multer` + optional direct Cloudinary upload through `cloudinary` SDK.
+- `multer-storage-cloudinary` is intentionally not required to avoid peer conflicts on newer Cloudinary versions.
+
+## Security note
+If credentials were shared in logs/chat, rotate them immediately (DB password, JWT secret, Cloudinary keys).
