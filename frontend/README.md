@@ -1,6 +1,6 @@
 # TaskFlow Frontend
 
-React + Vite + Tailwind front-end for TaskFlow.
+Enhanced SaaS-style frontend with analytics, reports, notifications, activity feed, and settings.
 
 ## Setup
 ```bash
@@ -9,21 +9,19 @@ npm run dev
 npm run build
 ```
 
+## New frontend pages
+- `/dashboard` (analytics cards + charts)
+- `/projects/:projectId` (kanban + live comments)
+- `/activity` (project timeline)
+- `/reports` (generate + download PDF/CSV)
+- `/settings` (soft delete + invite regenerate)
+
+## Added UI capabilities
+- Recharts visual analytics
+- jsPDF report download
+- Notification bell + unread badge
+- Dark mode toggle
+- Better loading/error and polished styling
+
 ## Environment
 Copy `.env.example` to `.env`.
-
-- `VITE_API_BASE_URL` e.g. `http://localhost:5000/api`
-- `VITE_SOCKET_URL` e.g. `http://localhost:5000`
-
-## Features
-- Auth pages (register/login)
-- Protected routes
-- Dashboard + project list
-- Project task board with TODO / IN_PROGRESS / DONE columns
-- Real-time task updates with Socket.io
-
-## Deployment (Vercel)
-1. Import `frontend/` project into Vercel.
-2. Set `VITE_API_BASE_URL` and `VITE_SOCKET_URL`.
-3. Build command: `npm run build`.
-4. Output directory: `dist`.

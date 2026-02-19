@@ -15,6 +15,8 @@ export const configureSocket = (io) => {
   });
 
   io.on('connection', (socket) => {
+    socket.join(`user:${socket.user.id}`);
+
     socket.on('project:join', async (projectId) => {
       const membership = await prisma.projectMember.findUnique({
         where: {
@@ -25,11 +27,7 @@ export const configureSocket = (io) => {
         },
       });
 
-      if (membership) {
-        socket.join(`project:${projectId}`);
-      }
+      if (membership) socket.join(`project:${projectId}`);
     });
-
-    socket.on('disconnect', () => {});
   });
 };

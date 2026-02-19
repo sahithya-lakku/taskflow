@@ -15,6 +15,7 @@ export default function LoginPage() {
       setError('');
       const { data } = await api.post('/auth/login', form);
       setAuth({ user: data.user, token: data.token });
+      if (data.refreshToken) localStorage.setItem('taskflow_refresh_token', data.refreshToken);
       navigate('/dashboard');
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed');

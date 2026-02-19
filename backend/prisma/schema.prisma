@@ -8,13 +8,17 @@ datasource db {
 }
 
 enum UserRole {
+  OWNER
   ADMIN
   MEMBER
+  VIEWER
 }
 
 enum ProjectMemberRole {
   OWNER
+  ADMIN
   MEMBER
+  VIEWER
 }
 
 enum TaskStatus {
@@ -30,27 +34,42 @@ enum TaskPriority {
 }
 
 model User {
-  id               String           @id @default(cuid())
+  id               String            @id @default(cuid())
   name             String
-  email            String           @unique
+  email            String            @unique
   password         String
-  role             UserRole         @default(MEMBER)
-  createdAt        DateTime         @default(now())
-  ownedProjects    Project[]        @relation("ProjectOwner")
+  role             UserRole          @default(MEMBER)
+  createdAt        DateTime          @default(now())
+  ownedProjects    Project[]         @relation("ProjectOwner")
   memberships      ProjectMember[]
-  assignedTasks    Task[]           @relation("TaskAssignee")
+  assignedTasks    Task[]            @relation("TaskAssignee")
   taskActivityLogs TaskActivityLog[] @relation("ActivityPerformer")
+  comments         Comment[]
+  notifications    Notification[]
+  timeLogs         TimeLog[]
+  invitesGenerated InviteToken[]     @relation("InviteCreator")
+  reportsGenerated Report[]          @relation("ReportGenerator")
+  refreshTokens    RefreshToken[]
+
+  @@index([email])
 }
 
 model Project {
-  id          String          @id @default(cuid())
+  id          String            @id @default(cuid())
   name        String
   description String?
   ownerId     String
-  owner       User            @relation("ProjectOwner", fields: [ownerId], references: [id])
-  createdAt   DateTime        @default(now())
+  owner       User              @relation("ProjectOwner", fields: [ownerId], references: [id])
+  createdAt   DateTime          @default(now())
+  deletedAt   DateTime?
   members     ProjectMember[]
   tasks       Task[]
+  activities  ProjectActivity[]
+  invites     InviteToken[]
+  reports     Report[]
+
+  @@index([ownerId])
+  @@index([deletedAt])
 }
 
 model ProjectMember {
@@ -62,6 +81,7 @@ model ProjectMember {
   project   Project           @relation(fields: [projectId], references: [id])
 
   @@unique([userId, projectId])
+  @@index([projectId])
 }
 
 model Task {
@@ -76,7 +96,16 @@ model Task {
   project          Project           @relation(fields: [projectId], references: [id])
   assignedTo       User?             @relation("TaskAssignee", fields: [assignedToId], references: [id])
   createdAt        DateTime          @default(now())
+  deletedAt        DateTime?
   taskActivityLogs TaskActivityLog[]
+  comments         Comment[]
+  attachments      Attachment[]
+  timeLogs         TimeLog[]
+  tags             TaskTag[]
+
+  @@index([projectId, status])
+  @@index([assignedToId])
+  @@index([deletedAt])
 }
 
 model TaskActivityLog {
@@ -87,4 +116,120 @@ model TaskActivityLog {
   timestamp      DateTime @default(now())
   task           Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
   performedBy    User     @relation("ActivityPerformer", fields: [performedById], references: [id])
+
+  @@index([taskId, timestamp])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId, read, createdAt])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  taskId     String
+  userId     String
+  content    String
+  createdAt  DateTime @default(now())
+  task       Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([taskId, createdAt])
+}
+
+model Attachment {
+  id         String   @id @default(cuid())
+  taskId      String
+  fileUrl     String
+  fileName    String
+  uploadedBy  String
+  createdAt   DateTime @default(now())
+  task        Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+}
+
+model TimeLog {
+  id           String   @id @default(cuid())
+  taskId        String
+  userId        String
+  minutesSpent  Int
+  createdAt     DateTime @default(now())
+  task          Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([taskId, createdAt])
+  @@index([userId, createdAt])
+}
+
+model Tag {
+  id      String   @id @default(cuid())
+  name    String   @unique
+  color   String
+  tasks   TaskTag[]
+}
+
+model TaskTag {
+  id      String @id @default(cuid())
+  taskId  String
+  tagId   String
+  task    Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  tag     Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, tagId])
+  @@index([tagId])
+}
+
+model ProjectActivity {
+  id          String   @id @default(cuid())
+  projectId   String
+  action      String
+  performedBy String
+  createdAt   DateTime @default(now())
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, createdAt])
+}
+
+model InviteToken {
+  id          String   @id @default(cuid())
+  projectId   String
+  token       String   @unique
+  expiresAt   DateTime
+  createdById String
+  createdAt   DateTime @default(now())
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy   User     @relation("InviteCreator", fields: [createdById], references: [id])
+
+  @@index([projectId, expiresAt])
+}
+
+model Report {
+  id           String   @id @default(cuid())
+  projectId     String
+  generatedById String
+  fileUrl       String
+  createdAt     DateTime @default(now())
+  project       Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  generatedBy   User     @relation("ReportGenerator", fields: [generatedById], references: [id])
+
+  @@index([projectId, createdAt])
+}
+
+model RefreshToken {
+  id         String   @id @default(cuid())
+  token      String   @unique
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt  DateTime
+  blacklisted Boolean @default(false)
+  createdAt  DateTime @default(now())
+
+  @@index([userId, blacklisted])
 }
