@@ -23,9 +23,8 @@ TaskFlow has been extended into a production-oriented enterprise collaboration p
 ## Run
 ### Backend
 ```bash
-cd backend
 npm install
-cp .env.example .env
+copy .env.example .env
 npx prisma generate
 npx prisma migrate dev --name enterprise_upgrade
 npm run dev
