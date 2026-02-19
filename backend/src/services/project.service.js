@@ -66,7 +66,7 @@ export const softDeleteProject = async (projectId, userId) => {
 };
 
 export const hardDeleteProject = async (projectId, userId, isAdmin) => {
-  if (!isAdmin) throw new ApiError(403, 'Only ADMIN user can hard delete project');
+  if (!isAdmin) throw new ApiError(403, 'Only SUPER_ADMIN can hard delete project');
   await prisma.project.delete({ where: { id: projectId } });
 };
 

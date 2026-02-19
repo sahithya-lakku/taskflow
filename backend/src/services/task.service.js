@@ -2,6 +2,8 @@ import { prisma } from '../config/prisma.js';
 import { ApiError } from '../utils/apiError.js';
 import { createNotification } from './notification.service.js';
 import { ensureProjectMember } from './project.service.js';
+import { evaluateTaskRules } from './automation.service.js';
+import { recomputeUserGamification } from './gamification.service.js';
 
 const createActivity = async (taskId, performedById, action) => {
   await prisma.taskActivityLog.create({ data: { taskId, performedById, action } });
@@ -41,7 +43,7 @@ export const listTasks = async ({ projectId, userId, page, limit, status, tagId 
 };
 
 export const createTask = async ({ projectId, userId, payload, io }) => {
-  await ensureProjectMember(projectId, userId, ['OWNER', 'ADMIN', 'MEMBER']);
+  await ensureProjectMember(projectId, userId, ['OWNER', 'ADMIN', 'EDITOR', 'MEMBER']);
 
   const task = await prisma.task.create({
     data: {
@@ -56,6 +58,8 @@ export const createTask = async ({ projectId, userId, payload, io }) => {
   if (payload.assignedToId) {
     await createNotification({ userId: payload.assignedToId, message: `You were assigned task: ${task.title}` }, io);
   }
+  await evaluateTaskRules(task, io);
+  if (task.assignedToId) await recomputeUserGamification(task.assignedToId);
   return task;
 };
 
@@ -63,7 +67,7 @@ export const updateTask = async ({ taskId, userId, payload, io }) => {
   const existing = await prisma.task.findUnique({ where: { id: taskId } });
   if (!existing || existing.deletedAt) throw new ApiError(404, 'Task not found');
 
-  await ensureProjectMember(existing.projectId, userId, ['OWNER', 'ADMIN', 'MEMBER']);
+  await ensureProjectMember(existing.projectId, userId, ['OWNER', 'ADMIN', 'EDITOR', 'MEMBER']);
 
   const task = await prisma.task.update({
     where: { id: taskId },
@@ -78,7 +82,9 @@ export const updateTask = async ({ taskId, userId, payload, io }) => {
 
   if (task.assignedToId) {
     await createNotification({ userId: task.assignedToId, message: `Task updated: ${task.title}` }, io);
+    await recomputeUserGamification(task.assignedToId);
   }
+  await evaluateTaskRules(task, io);
 
   return task;
 };
@@ -87,7 +93,7 @@ export const deleteTask = async ({ taskId, userId }) => {
   const existing = await prisma.task.findUnique({ where: { id: taskId } });
   if (!existing || existing.deletedAt) throw new ApiError(404, 'Task not found');
 
-  await ensureProjectMember(existing.projectId, userId, ['OWNER', 'ADMIN', 'MEMBER']);
+  await ensureProjectMember(existing.projectId, userId, ['OWNER', 'ADMIN', 'EDITOR', 'MEMBER']);
   await createActivity(taskId, userId, 'Task deleted');
   await prisma.task.update({ where: { id: taskId }, data: { deletedAt: new Date() } });
   await prisma.projectActivity.create({ data: { projectId: existing.projectId, action: `Task deleted`, performedBy: userId } });
@@ -98,7 +104,7 @@ export const deleteTask = async ({ taskId, userId }) => {
 export const addComment = async ({ taskId, userId, content }, io) => {
   const task = await prisma.task.findUnique({ where: { id: taskId } });
   if (!task || task.deletedAt) throw new ApiError(404, 'Task not found');
-  await ensureProjectMember(task.projectId, userId, ['OWNER', 'ADMIN', 'MEMBER']);
+  await ensureProjectMember(task.projectId, userId, ['OWNER', 'ADMIN', 'EDITOR', 'MEMBER']);
 
   const comment = await prisma.comment.create({
     data: { taskId, userId, content },
@@ -127,7 +133,7 @@ export const listComments = async (taskId, userId) => {
 export const addAttachment = async ({ taskId, file, userId }) => {
   const task = await prisma.task.findUnique({ where: { id: taskId } });
   if (!task || task.deletedAt) throw new ApiError(404, 'Task not found');
-  await ensureProjectMember(task.projectId, userId, ['OWNER', 'ADMIN', 'MEMBER']);
+  await ensureProjectMember(task.projectId, userId, ['OWNER', 'ADMIN', 'EDITOR', 'MEMBER']);
 
   return prisma.attachment.create({
     data: {
@@ -144,7 +150,7 @@ export const createTag = async (payload) => prisma.tag.create({ data: payload })
 export const assignTagToTask = async ({ taskId, tagId, userId }) => {
   const task = await prisma.task.findUnique({ where: { id: taskId } });
   if (!task || task.deletedAt) throw new ApiError(404, 'Task not found');
-  await ensureProjectMember(task.projectId, userId, ['OWNER', 'ADMIN', 'MEMBER']);
+  await ensureProjectMember(task.projectId, userId, ['OWNER', 'ADMIN', 'EDITOR', 'MEMBER']);
 
   return prisma.taskTag.upsert({
     where: { taskId_tagId: { taskId, tagId } },
@@ -156,7 +162,7 @@ export const assignTagToTask = async ({ taskId, tagId, userId }) => {
 export const logTime = async ({ taskId, userId, minutesSpent }) => {
   const task = await prisma.task.findUnique({ where: { id: taskId } });
   if (!task || task.deletedAt) throw new ApiError(404, 'Task not found');
-  await ensureProjectMember(task.projectId, userId, ['OWNER', 'ADMIN', 'MEMBER']);
+  await ensureProjectMember(task.projectId, userId, ['OWNER', 'ADMIN', 'EDITOR', 'MEMBER']);
 
   return prisma.timeLog.create({ data: { taskId, userId, minutesSpent } });
 };

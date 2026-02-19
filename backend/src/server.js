@@ -8,6 +8,15 @@ import authRoutes from './routes/auth.routes.js';
 import projectRoutes from './routes/project.routes.js';
 import taskRoutes from './routes/task.routes.js';
 import notificationRoutes from './routes/notification.routes.js';
+import profileRoutes from './routes/profile.routes.js';
+import adminRoutes from './routes/admin.routes.js';
+import calendarRoutes from './routes/calendar.routes.js';
+import automationRoutes from './routes/automation.routes.js';
+import bookmarkRoutes from './routes/bookmark.routes.js';
+import templateRoutes from './routes/template.routes.js';
+import analyticsRoutes from './routes/analytics.routes.js';
+import trashRoutes from './routes/trash.routes.js';
+import { runDueDateAutomation } from './services/automation.service.js';
 import { errorHandler } from './middlewares/error.middleware.js';
 import { sanitizeInput } from './middlewares/security.middleware.js';
 import { configureSocket } from './sockets/index.js';
@@ -50,10 +59,20 @@ app.use('/api/auth', authRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/profile', profileRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/calendar', calendarRoutes);
+app.use('/api/automation', automationRoutes);
+app.use('/api/bookmark', bookmarkRoutes);
+app.use('/api/templates', templateRoutes);
+app.use('/api/analytics', analyticsRoutes);
+app.use('/api/trash', trashRoutes);
 
 app.use(errorHandler);
 
 const PORT = appEnv.PORT;
+setInterval(() => { runDueDateAutomation().catch(() => {}); }, 60 * 60 * 1000);
+
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });

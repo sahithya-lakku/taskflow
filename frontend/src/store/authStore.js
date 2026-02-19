@@ -2,7 +2,7 @@ import { create } from 'zustand';
 
 const initialUser = JSON.parse(localStorage.getItem('taskflow_user') || 'null');
 const initialToken = localStorage.getItem('taskflow_token');
-const initialTheme = localStorage.getItem('taskflow_theme') || 'dark';
+const initialTheme = localStorage.getItem('taskflow_theme') || 'light';
 
 export const useAuthStore = create((set) => ({
   user: initialUser,

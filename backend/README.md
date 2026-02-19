@@ -1,91 +1,56 @@
-# TaskFlow Backend
+# TaskFlow Backend (Enterprise Extension)
 
-Production-grade backend for TaskFlow SaaS collaboration.
+This backend now extends TaskFlow into an enterprise collaboration platform while keeping the existing architecture.
 
-## New capabilities added
-- Soft delete for projects/tasks (`deletedAt`)
-- Hard delete project endpoint (admin-level)
-- Comments + real-time comment events
-- Attachments upload via Multer
-- Notifications table + socket notifications
-- Time logs + task time aggregation
-- Tags and task-tag mapping
-- Project activity feed
-- Invite token generation/join
-- Analytics and report generation APIs
-- Helmet + rate limiting + request sanitization
-- Access token + refresh token flow with token blacklist model
+## Major additions
+- Advanced role system:
+  - User roles: `USER`, `ADMIN`, `SUPER_ADMIN`
+  - Project roles: `OWNER`, `ADMIN`, `EDITOR`, `MEMBER`, `VIEWER`
+- Strict RBAC middleware for global and project scopes
+- Profile service (with avatar upload via Cloudinary when configured)
+- Extended statuses: `TODO`, `IN_PROGRESS`, `REVIEW`, `DONE`, `BLOCKED`
+- Automation rules engine + scheduled due-date automation checks
+- Calendar APIs
+- Bookmark APIs
+- Trash APIs (restore / force delete)
+- Enterprise analytics endpoints
+- Admin dashboard APIs + audit logs
+- Project templates
+- Gamification service (points/level/streak scaffolding)
 
 ## Setup
 ```bash
 npm install
 cp .env.example .env
 npx prisma generate
-npx prisma migrate dev --name saas_upgrade
+npx prisma migrate dev --name enterprise_upgrade
 npm run dev
 ```
 
-## Migration instructions (important)
-If your Neon DB already has prior migrations:
+## Migration notes (Neon)
+If drift exists due to prior migration history:
 ```bash
 npx prisma migrate status
 npx prisma migrate resolve --applied 20260219130757_init
-npx prisma migrate dev --name saas_upgrade
+npx prisma migrate dev --name enterprise_upgrade
 ```
 
-## New API list
-### Auth
-- `POST /api/auth/register`
-- `POST /api/auth/login`
-- `POST /api/auth/refresh`
-- `POST /api/auth/logout`
+## Key new APIs
+- `GET /api/profile`, `PUT /api/profile`, `PUT /api/profile/avatar`, `PUT /api/profile/password`, `DELETE /api/profile/account`
+- `GET /api/admin/users`, `GET /api/admin/projects`, `GET /api/admin/tasks`
+- `PATCH /api/admin/users/:userId/suspend`, `DELETE /api/admin/projects/:projectId/force`
+- `GET /api/admin/analytics`, `GET /api/admin/audit-logs`
+- `GET /api/calendar/tasks/calendar`, `PATCH /api/calendar/tasks/:taskId/reschedule`
+- `GET/POST /api/automation/:projectId`
+- `GET/POST/DELETE /api/bookmark`
+- `GET /api/trash`, `POST /api/trash/restore`, `DELETE /api/trash/force-delete`
+- `GET /api/analytics/workload`, `/completion-rate`, `/time-spent`, `/project-progress`
+- `GET /api/templates`, `POST /api/templates/project/:projectId`, `POST /api/templates/:templateId/create`
 
-### Projects
-- `GET /api/projects`
-- `POST /api/projects`
-- `POST /api/projects/:projectId/members`
-- `DELETE /api/projects/:projectId` (soft)
-- `DELETE /api/projects/:projectId/hard` (hard)
-- `POST /api/projects/:projectId/invites`
-- `POST /api/projects/join`
-- `GET /api/projects/:projectId/activity`
-- `GET /api/projects/:projectId/analytics`
-- `GET /api/projects/:projectId/report`
+## Cloudinary (optional)
+Set these env vars to upload avatars to Cloudinary:
+- `CLOUDINARY_CLOUD_NAME`
+- `CLOUDINARY_API_KEY`
+- `CLOUDINARY_API_SECRET`
 
-### Tasks
-- `GET /api/tasks/project/:projectId?page=1&limit=10&status=TODO&tagId=`
-- `POST /api/tasks/project/:projectId`
-- `PATCH /api/tasks/:taskId`
-- `DELETE /api/tasks/:taskId` (soft)
-- `GET /api/tasks/:taskId/comments`
-- `POST /api/tasks/:taskId/comments`
-- `POST /api/tasks/:taskId/attachments` (multipart/form-data, key: `file`)
-- `POST /api/tasks/tags`
-- `POST /api/tasks/:taskId/tags`
-- `POST /api/tasks/:taskId/time-logs`
-- `GET /api/tasks/:taskId/time-logs/summary`
-
-### Notifications
-- `GET /api/notifications`
-- `PATCH /api/notifications/:id/read`
-
-## Real-time events
-- `task:created`, `task:updated`, `task:deleted`
-- `comment:created`
-- `notification:new`
-
-
-## Fix: `Environment variable not found: DATABASE_URL`
-If you get this error, your `.env` is missing or empty.
-
-Windows (from `backend`):
-```bat
-copy .env.example .env
-notepad .env
-```
-Then set at least:
-```env
-DATABASE_URL=postgresql://...
-JWT_SECRET=your-long-secret
-```
-Restart `npm run dev` after saving `.env`.
+If not set, avatar uploads fall back to local `uploads/`.

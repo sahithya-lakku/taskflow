@@ -49,7 +49,7 @@ export const softDeleteProjectHandler = async (req, res, next) => {
 
 export const hardDeleteProjectHandler = async (req, res, next) => {
   try {
-    await hardDeleteProject(req.params.projectId, req.user.id, req.user.role === 'ADMIN' || req.user.role === 'OWNER');
+    await hardDeleteProject(req.params.projectId, req.user.id, req.user.role === 'SUPER_ADMIN');
     res.status(200).json({ success: true, message: 'Project permanently deleted' });
   } catch (error) {
     next(error);

@@ -1,19 +1,33 @@
-# TaskFlow
+# TaskFlow Enterprise
 
-Full-stack SaaS collaboration platform (extended from baseline TaskFlow).
+TaskFlow has been extended into a production-oriented enterprise collaboration platform while preserving the modular architecture.
 
-## Structure
-- `backend/` Express + Prisma + Socket.io API
-- `frontend/` React + Vite + Tailwind web app
+## Backend additions
+- Advanced global/project RBAC and strict guards
+- Profile service and account controls
+- Automation rules, calendar service, bookmarks, trash restore
+- Admin APIs (users/projects/tasks/audit/analytics)
+- Platform analytics endpoints
+- Project templates and gamification scaffolding
 
-## Quick start
+## Frontend additions
+- Admin dashboard
+- Profile page
+- Automation page
+- Calendar page
+- Bookmarks page
+- Trash page
+- Colorful multi-status drag-and-drop kanban
+- Multi-theme support (light/dark/auto)
+
+## Run
 ### Backend
 ```bash
 cd backend
 npm install
 cp .env.example .env
 npx prisma generate
-npx prisma migrate dev --name saas_upgrade
+npx prisma migrate dev --name enterprise_upgrade
 npm run dev
 ```
 
@@ -23,9 +37,3 @@ cd frontend
 npm install
 npm run dev
 ```
-
-## What's newly added
-- Notifications, comments, attachments, time logs, tags, invite links
-- Activity feed and analytics endpoints
-- Report generation (JSON + CSV backend, PDF/CSV frontend downloads)
-- Improved frontend pages and visuals
