@@ -62,3 +62,21 @@ If not set, avatar uploads fall back to local `uploads/`.
 
 ## Security note
 If credentials were shared in logs/chat, rotate them immediately (DB password, JWT secret, Cloudinary keys).
+
+
+## Drift fix for shared Neon databases
+If Prisma reports missing historical migrations (for example `20260219143913_saas_upgrade`), reconcile without reset:
+```bash
+npx prisma migrate status
+npx prisma migrate resolve --applied 20260219130757_init
+npx prisma migrate resolve --applied 20260219143913_saas_upgrade
+npx prisma migrate dev --name enterprise_upgrade
+```
+If you already have data in Neon, choose **No** when Prisma asks to reset.
+
+## About repeated `Invalid or expired token` logs
+This usually happens when the browser has an old token in localStorage.
+- Log out and log in again, or clear localStorage keys:
+  - `taskflow_token`
+  - `taskflow_refresh_token`
+  - `taskflow_user`

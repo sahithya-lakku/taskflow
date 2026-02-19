@@ -1,0 +1,4 @@
+-- Historical migration placeholder.
+-- This migration name exists in some shared Neon environments.
+-- If this migration is already applied remotely, keep this directory so Prisma history can be reconciled locally.
+-- Use: npx prisma migrate resolve --applied 20260219143913_saas_upgrade
